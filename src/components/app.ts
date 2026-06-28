@@ -12,6 +12,7 @@ interface State {
   jourIdx: number;
   tab: Tab;
   modalExIdx: number | null;
+  warmupExpanded: boolean;
 }
 
 let state: State = {
@@ -19,6 +20,7 @@ let state: State = {
   jourIdx: 0,
   tab: 'programme',
   modalExIdx: null,
+  warmupExpanded: false,
 };
 
 function setState(patch: Partial<State>): void {
@@ -61,7 +63,7 @@ function renderHeader(): string {
 
 function renderActiveTab(): string {
   if (state.tab === 'programme') {
-    return `<div class="content">${renderProgramme(state.phaseIdx, state.jourIdx)}</div>`;
+    return `<div class="content">${renderProgramme(state.phaseIdx, state.jourIdx, state.warmupExpanded)}</div>`;
   }
   return `<div class="content">${renderConseils()}</div>`;
 }
@@ -99,10 +101,12 @@ function handleClick(e: Event): void {
     if (tab) setState({ tab, modalExIdx: null });
   } else if (action === 'set-phase') {
     const phase = el.dataset['phase'];
-    if (phase !== undefined) setState({ phaseIdx: +phase, jourIdx: 0, modalExIdx: null });
+    if (phase !== undefined) setState({ phaseIdx: +phase, jourIdx: 0, modalExIdx: null, warmupExpanded: false });
   } else if (action === 'set-jour') {
     const jour = el.dataset['jour'];
-    if (jour !== undefined) setState({ jourIdx: +jour, modalExIdx: null });
+    if (jour !== undefined) setState({ jourIdx: +jour, modalExIdx: null, warmupExpanded: false });
+  } else if (action === 'toggle-warmup') {
+    setState({ warmupExpanded: !state.warmupExpanded });
   } else if (action === 'open-modal') {
     const exIdx = el.dataset['exIdx'];
     if (exIdx !== undefined) setState({ modalExIdx: +exIdx });
@@ -119,6 +123,7 @@ export function mount(): void {
     jourIdx: saved.activeJourIdx ?? 0,
     tab: (saved.activeTab === 'conseils' ? 'conseils' : 'programme') as Tab,
     modalExIdx: null,
+    warmupExpanded: false,
   };
 
   document.getElementById('app')!.addEventListener('click', handleClick);

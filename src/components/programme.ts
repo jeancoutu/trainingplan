@@ -1,7 +1,8 @@
 import { phases } from '../data/phases';
 import { instructions } from '../data/instructions';
+import { renderWarmup } from './warmup';
 
-export function renderProgramme(phaseIdx: number, jourIdx: number): string {
+export function renderProgramme(phaseIdx: number, jourIdx: number, warmupExpanded: boolean): string {
   const phase = phases[phaseIdx];
   if (!phase) return '';
   const jour = phase.jours[jourIdx];
@@ -38,6 +39,8 @@ export function renderProgramme(phaseIdx: number, jourIdx: number): string {
       <span style="font-size:14px">👆</span>
       <span>Appuyez sur un exercice pour voir les instructions détaillées</span>
     </div>
+
+    ${renderWarmup(jour.type, c, warmupExpanded)}
 
     <div class="ex-card" style="border-color:${c}30">
       <div class="ex-card-header" style="background:linear-gradient(135deg,${c}20,${c}08);border-bottom:1px solid ${c}25">
