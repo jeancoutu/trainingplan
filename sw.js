@@ -1,5 +1,5 @@
 const CACHE = 'workout-v3';
-const ASSETS = ['/trainingplan.io/', '/trainingplan.io/index.html', '/trainingplan.io/app.js', '/trainingplan.io/manifest.json'];
+const ASSETS = ['/trainingplan/', '/trainingplan/index.html', '/trainingplan/app.js', '/trainingplan/manifest.json'];
 
 self.addEventListener('install', e => e.waitUntil(
   caches.open(CACHE).then(c => c.addAll(ASSETS))
