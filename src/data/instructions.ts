@@ -6,10 +6,11 @@ export const instructions: Record<string, ExerciseInstruction> = {
     equipement: "Aucun",
     etapes: [
       "Mettez-vous en position planche : mains à largeur d'épaules (ou légèrement plus larges), doigts pointés vers l'avant.",
-      "Corps parfaitement droit de la tête aux talons — fessiers ni trop hauts ni trop bas. Contractez le ventre.",
-      "Descendez lentement en pliant les coudes à ~45° par rapport au corps (pas à 90°). La poitrine vise le sol, pas le menton.",
-      "Effleurez le sol avec la poitrine (ou arrêtez à 2–3 cm), puis poussez fort vers le haut en expirant.",
-      "Bras presque tendus en haut — ne verrouillez pas complètement les coudes.",
+      "Corps parfaitement droit de la tête aux talons — fessiers ni trop hauts ni trop bas. Contractez le ventre et serrer les fesses.",
+      "Descendez lentement en pliant les coudes à ~45° par rapport au corps (pas à 90°). Ton corp doit ressembler a une fleche vu de haut, pas un T.",
+      "Effleurez le sol avec la poitrine (ou arrêtez à 2–3 cm), prendre une petite pause (1-2s), puis poussez fort vers le haut en expirant.",
+      "En bas, pousser les omoplates ensemble et ouvrir la poitrine, pour ne pas que les épaules soit vers le bas",
+      "Bras presque tendus en haut — ne verrouillez pas complètement les coudes, mais pousser jusqu'a ce que le dos arroudit un peu",
     ],
     erreurs: [
       "Fessiers trop hauts (position de montagne) — le corps doit être une ligne droite.",
