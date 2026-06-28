@@ -1,5 +1,6 @@
 import { phases } from '../data/phases';
 import { instructions } from '../data/instructions';
+import { getTodaySession } from '../storage/index';
 import { renderWarmup } from './warmup';
 
 export function renderProgramme(phaseIdx: number, jourIdx: number, warmupExpanded: boolean): string {
@@ -8,6 +9,9 @@ export function renderProgramme(phaseIdx: number, jourIdx: number, warmupExpande
   const jour = phase.jours[jourIdx];
   if (!jour) return '';
   const c = phase.couleur;
+
+  const todaySession = getTodaySession(phase.id, jour.label);
+  const loggedNames = new Set(todaySession?.exercises.map(e => e.exerciseName) ?? []);
 
   return `
     <div class="phase-grid">
@@ -50,6 +54,7 @@ export function renderProgramme(phaseIdx: number, jourIdx: number, warmupExpande
       <div class="ex-list">
         ${jour.exercices.map((ex, i) => {
           const hasInfo = ex.nom in instructions;
+          const logged = loggedNames.has(ex.nom);
           return `
             <div class="ex-row${hasInfo ? ' ex-clickable' : ''}"
               ${hasInfo ? `data-action="open-modal" data-ex-idx="${i}"` : ''}
@@ -57,6 +62,7 @@ export function renderProgramme(phaseIdx: number, jourIdx: number, warmupExpande
               <div class="ex-row-inner">
                 <div style="flex:1">
                   <div class="ex-name" style="color:${hasInfo ? '#f0f4ff' : '#c9d1e0'}">
+                    ${logged ? `<span style="color:#4ade80;margin-right:5px">✓</span>` : ''}
                     ${ex.nom}
                     ${hasInfo ? `<span class="ex-badge" style="color:${c};border:1px solid ${c}50">DÉTAILS</span>` : ''}
                   </div>

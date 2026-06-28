@@ -1,7 +1,14 @@
 import { instructions } from '../data/instructions';
+import { renderLogbook } from './logbook';
 import type { Exercise } from '../types';
 
-export function renderModal(ex: Exercise, phaseColor: string): string {
+export function renderModal(
+  ex: Exercise,
+  phaseColor: string,
+  phaseId: number,
+  dayLabel: string,
+  showPR: boolean,
+): string {
   const info = instructions[ex.nom];
   if (!info) return '';
 
@@ -63,6 +70,7 @@ export function renderModal(ex: Exercise, phaseColor: string): string {
             <div class="conseil-box-label" style="color:${c}">💡 Conseil</div>
             <div class="conseil-box-text">${info.conseil}</div>
           </div>
+          ${renderLogbook(ex, phaseId, dayLabel, c, showPR)}
         </div>
       </div>
     </div>

@@ -2,8 +2,10 @@ import { phases } from '../data/phases';
 import { renderProgramme } from './programme';
 import { renderModal } from './modal';
 import { renderConseils } from './conseils';
-import { getAppState, saveAppState } from '../storage/index';
-import type { Exercise } from '../types';
+import { getAppState, saveAppState, getTodaySession, upsertTodaySession, updatePRIfBeaten } from '../storage/index';
+import { newSetRowHtml } from './logbook';
+import { todayKey } from '../utils/date';
+import type { Exercise, SessionLog, ExerciseLog, SetEntry } from '../types';
 
 type Tab = 'programme' | 'conseils';
 
@@ -13,6 +15,7 @@ interface State {
   tab: Tab;
   modalExIdx: number | null;
   warmupExpanded: boolean;
+  showPR: boolean;
 }
 
 let state: State = {
@@ -21,6 +24,7 @@ let state: State = {
   tab: 'programme',
   modalExIdx: null,
   warmupExpanded: false,
+  showPR: false,
 };
 
 function setState(patch: Partial<State>): void {
@@ -70,10 +74,12 @@ function renderActiveTab(): string {
 
 function render(): void {
   const modalEx = getModalEx();
-  const phaseColor = phases[state.phaseIdx]?.couleur ?? '#4ade80';
+  const phase = phases[state.phaseIdx];
+  const phaseColor = phase?.couleur ?? '#4ade80';
+  const jour = phase?.jours[state.jourIdx];
 
   document.getElementById('app')!.innerHTML = `
-    ${modalEx ? renderModal(modalEx, phaseColor) : ''}
+    ${modalEx && phase && jour ? renderModal(modalEx, phaseColor, phase.id, jour.label, state.showPR) : ''}
     ${renderHeader()}
     ${renderActiveTab()}
   `;
@@ -89,6 +95,68 @@ function attachHoverEvents(): void {
   });
 }
 
+function handleLogbookSave(): void {
+  const phase = phases[state.phaseIdx];
+  const jour = phase?.jours[state.jourIdx];
+  if (!phase || !jour || state.modalExIdx === null) return;
+
+  const ex = jour.exercices[state.modalExIdx];
+  if (!ex) return;
+
+  const rows = document.querySelectorAll<HTMLElement>('.logbook-set-row');
+  const sets: SetEntry[] = [];
+  rows.forEach(row => {
+    const w = parseFloat((row.querySelector('.logbook-weight') as HTMLInputElement | null)?.value ?? '');
+    const r = parseInt((row.querySelector('.logbook-reps') as HTMLInputElement | null)?.value ?? '');
+    if (!isNaN(w) && !isNaN(r) && (w > 0 || r > 0)) {
+      sets.push({ weight: w, reps: r });
+    }
+  });
+
+  if (sets.length === 0) return;
+
+  const today = todayKey();
+  const sessionId = `${today}_p${phase.id}_${jour.label}`;
+  const existing = getTodaySession(phase.id, jour.label);
+
+  const session: SessionLog = existing ?? {
+    id: sessionId,
+    phaseId: phase.id,
+    dayLabel: jour.label,
+    dayType: jour.type,
+    exercises: [],
+    completedAt: new Date().toISOString(),
+  };
+
+  const log: ExerciseLog = { exerciseName: ex.nom, sets };
+  const exIdx = session.exercises.findIndex(e => e.exerciseName === ex.nom);
+  if (exIdx >= 0) {
+    session.exercises[exIdx] = log;
+  } else {
+    session.exercises.push(log);
+  }
+  session.completedAt = new Date().toISOString();
+
+  upsertTodaySession(session);
+  const isNewPR = updatePRIfBeaten(log, today);
+
+  setState({ showPR: isNewPR });
+}
+
+function handleLogbookAddSet(): void {
+  const container = document.getElementById('logbook-sets');
+  if (!container) return;
+
+  const rows = container.querySelectorAll('.logbook-set-row');
+  const num = rows.length + 1;
+  const phaseColor = phases[state.phaseIdx]?.couleur ?? '#4ade80';
+
+  const div = document.createElement('div');
+  div.innerHTML = newSetRowHtml(num, phaseColor).trim();
+  const newRow = div.firstElementChild;
+  if (newRow) container.appendChild(newRow);
+}
+
 function handleClick(e: Event): void {
   const target = e.target as HTMLElement;
   const el = target.closest<HTMLElement>('[data-action]');
@@ -98,21 +166,25 @@ function handleClick(e: Event): void {
 
   if (action === 'set-tab') {
     const tab = el.dataset['tab'] as Tab;
-    if (tab) setState({ tab, modalExIdx: null });
+    if (tab) setState({ tab, modalExIdx: null, showPR: false });
   } else if (action === 'set-phase') {
     const phase = el.dataset['phase'];
-    if (phase !== undefined) setState({ phaseIdx: +phase, jourIdx: 0, modalExIdx: null, warmupExpanded: false });
+    if (phase !== undefined) setState({ phaseIdx: +phase, jourIdx: 0, modalExIdx: null, warmupExpanded: false, showPR: false });
   } else if (action === 'set-jour') {
     const jour = el.dataset['jour'];
-    if (jour !== undefined) setState({ jourIdx: +jour, modalExIdx: null, warmupExpanded: false });
+    if (jour !== undefined) setState({ jourIdx: +jour, modalExIdx: null, warmupExpanded: false, showPR: false });
   } else if (action === 'toggle-warmup') {
     setState({ warmupExpanded: !state.warmupExpanded });
   } else if (action === 'open-modal') {
     const exIdx = el.dataset['exIdx'];
-    if (exIdx !== undefined) setState({ modalExIdx: +exIdx });
+    if (exIdx !== undefined) setState({ modalExIdx: +exIdx, showPR: false });
   } else if (action === 'modal-close') {
     if (el.classList.contains('modal-overlay') && e.target !== el) return;
-    setState({ modalExIdx: null });
+    setState({ modalExIdx: null, showPR: false });
+  } else if (action === 'logbook-save') {
+    handleLogbookSave();
+  } else if (action === 'logbook-add-set') {
+    handleLogbookAddSet();
   }
 }
 
@@ -124,6 +196,7 @@ export function mount(): void {
     tab: (saved.activeTab === 'conseils' ? 'conseils' : 'programme') as Tab,
     modalExIdx: null,
     warmupExpanded: false,
+    showPR: false,
   };
 
   document.getElementById('app')!.addEventListener('click', handleClick);
